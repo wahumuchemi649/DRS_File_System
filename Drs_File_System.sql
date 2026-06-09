@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
 --
--- Host: localhost    Database: drs_file_system
+-- Host: 127.0.0.1    Database: drs_file_system
 -- ------------------------------------------------------
 -- Server version	8.0.40
 
@@ -53,9 +53,9 @@ CREATE TABLE `discussions` (
   `isDiscussed` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`discussions`),
   KEY `docId` (`docId`),
-  KEY `hostId` (`hostId`),
+  KEY `fk_discussions_users` (`hostId`),
   CONSTRAINT `discussions_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE,
-  CONSTRAINT `discussions_ibfk_2` FOREIGN KEY (`hostId`) REFERENCES `users` (`UserId`)
+  CONSTRAINT `fk_discussions_users` FOREIGN KEY (`hostId`) REFERENCES `users` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -113,9 +113,9 @@ CREATE TABLE `notices` (
   `subject` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`noticeId`),
   KEY `docId` (`docId`),
-  KEY `sender` (`sender`),
-  CONSTRAINT `notices_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE,
-  CONSTRAINT `notices_ibfk_2` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`)
+  KEY `fk_notices_users` (`sender`),
+  CONSTRAINT `fk_notices_users` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`),
+  CONSTRAINT `notices_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -141,9 +141,9 @@ CREATE TABLE `reports` (
   `creatorId` int DEFAULT NULL,
   `availability` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`report`),
-  KEY `creatorId` (`creatorId`),
   KEY `docId` (`docId`),
-  CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`creatorId`) REFERENCES `users` (`UserId`),
+  KEY `fk_reports_users` (`creatorId`),
+  CONSTRAINT `fk_reports_users` FOREIGN KEY (`creatorId`) REFERENCES `users` (`UserId`),
   CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -172,11 +172,11 @@ CREATE TABLE `requests` (
   `status` enum('received','pending','rejected') DEFAULT NULL,
   PRIMARY KEY (`requestId`),
   KEY `docId` (`docId`),
-  KEY `sender` (`sender`),
-  KEY `receiver` (`receiver`),
-  CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE,
-  CONSTRAINT `requests_ibfk_2` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`),
-  CONSTRAINT `requests_ibfk_3` FOREIGN KEY (`receiver`) REFERENCES `users` (`UserId`)
+  KEY `fk_requests_users_1` (`sender`),
+  KEY `fk_requests_users_2` (`receiver`),
+  CONSTRAINT `fk_requests_users_1` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`),
+  CONSTRAINT `fk_requests_users_2` FOREIGN KEY (`receiver`) REFERENCES `users` (`UserId`),
+  CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -197,7 +197,7 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
-  `UserId` int NOT NULL,
+  `UserId` int NOT NULL AUTO_INCREMENT,
   `firstName` varchar(20) DEFAULT NULL,
   `lastName` varchar(20) DEFAULT NULL,
   `roles` varchar(20) DEFAULT NULL,
@@ -228,4 +228,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-08 11:34:28
+-- Dump completed on 2026-06-09 12:59:45
