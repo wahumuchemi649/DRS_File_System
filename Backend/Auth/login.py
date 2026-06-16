@@ -20,8 +20,8 @@ def login(email: str, password: str):
 
 
 # testing purposes
-if __name__ == "__main__":
-  result = login("test@example.com", "test1234")
-  print(result)
+#if __name__ == "__main__":
+  #result = login("test@example.com", "test1234")
+  #print(result)
 
   

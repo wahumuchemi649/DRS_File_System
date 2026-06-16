@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Enum
 from Config import Base  
-class User(Base):
+class user(Base):
     
-    __tablename__ = "Users"
+    __tablename__ = "users"
 
     
     UserId = Column(Integer, primary_key=True, autoincrement=True)
