@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRS File System - Admin</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body id="Body">
+    <header>
+        <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
+        <div>
+            <p>Republic of Kenya</p>
+            <h1>DRS File System</h1>
+            <p>Document Registry System</p>
+        </div>
+    </header>
+    
+        
+        <aside>
+            <h2>Admin Panel</h2>
+            <p>Welcome, Admin!</p>
+            <ul>
+                <li><a href="#Body">Dashboard</a></li>
+                <li><a href="#userManagement">User Management</a></li>
+                <li><a href="#document_management">Document Management</a></li>
+                <li><a href="#Settings">Settings</a></li>
+            </ul>
+        </aside>
+        <main>
+          <div id="dashboard">
+    <h2>Dashboard</h2>
+
+    <div class="stats-container" id="Numbers">
+
+        <div class="stat-card docs">
+            <p>Total Docs: <span id="totalDocs"></span></p>
+        </div>
+
+        <div class="stat-card users">
+            <p>Total Users: <span id="totalUsers">...</span></p>
+        </div>
+
+        <div class="stat-card departments">
+            <p>Departments: <span id="totalDepartments">...</span></p>
+        </div>
+
+    </div>
+</div>
+            <div id="userManagement">
+                <h2>User Management</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                           
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+    <!-- rows injected by JS -->
+</tbody>
+                </table>
+            </div>
+            <div id="document_management">
+                
+                 <h2>Document Management</h2>
+    
+    <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+        <select id="filterDocType">
+            <option value="">All Types</option>
+            <option value="report">Report</option>
+            <option value="notice">Notice</option>
+            <option value="discussion">Discussion</option>
+            <option value="request">Request</option>
+        </select>
+        <button onclick="searchDocuments()">Search</button>
+        <button onclick="loadDocuments()" style="background:#64748b;">Clear</button>
+    </div>
+</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ref No</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Department</th>
+                <th>Date Created</th>
+                <th>Status</th>
+                <th>Actions</th>
+               <th><button onclick="addDocument('${doc.docId}', this)">Add</button></th>
+            </tr>
+        </thead>
+        <tbody id="docsTableBody">
+            <!-- rows injected by JS -->
+        </tbody>
+    </table>
+            
+
+        </main>
+</body>
+<script>
+function searchDocuments() {
+    const docType = document.getElementById('filterDocType').value;
+
+    if (!docType) {
+        loadDocuments();  // if no type selected, just load all
+        return;
+    }
+
+    fetch('http://127.0.0.1:5000/Admin/search_documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: docType })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('docsTableBody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:#64748b;">
+                        No ${docType}s found.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+       data.forEach(doc => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+    <td>${doc.refNo}</td>
+    <td>${doc.title}</td>
+    <td>${doc.docType}</td>
+    <td>${doc.department ?? 'N/A'}</td>
+    <td>${doc.dateCreated}</td>
+    <td>${doc.status ?? 'N/A'}</td>
+    <td>
+        <button onclick="viewDoc('${doc.docId}')">View</button>
+        <button onclick="changeStatus('${doc.docId}', '${doc.docType}', '${doc.status}')">Status</button>
+        <button onclick="deleteDoc('${doc.docId}', this)">Delete</button>
+    </td>
+`;
+    tbody.appendChild(row);
+});
+    })
+    .catch(error => console.error('Error searching documents:', error));
+}    
+function addDocument() {
+    const modal = document.createElement('div');
+    modal.classList.add('modal-overlay');
+    modal.style.cssText = `
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 1000;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; padding:32px; border-radius:12px; width:450px; 
+                    box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
+            <h3 style="margin-bottom:20px; color:#1e293b;">Add Document</h3>
+
+            <!-- Core document fields -->
+            <label>Ref No</label>
+            <input id="doc-refNo" placeholder="e.g. REF/001/2026">
+
+            <label>Title</label>
+            <input id="doc-title" placeholder="Document title">
+
+            <label>Document Type</label>
+            <select id="doc-type" onchange="toggleTypeFields()">
+                <option value="">Select Type</option>
+                <option value="report">Report</option>
+                <option value="notice">Notice</option>
+                <option value="discussion">Discussion</option>
+                <option value="request">Request</option>
+            </select>
+
+            <label>Department ID</label>
+            <input id="doc-deptId" placeholder="e.g. DEPT001">
+
+            <label>File Path</label>
+            <input id="doc-filePath" placeholder="e.g. /files/doc.pdf">
+
+            <label>External?</label>
+            <select id="doc-isExternal">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+
+            <!-- Type-specific fields — shown/hidden by toggleTypeFields() -->
+            <div id="report-fields" style="display:none;">
+                <hr style="margin:16px 0; border-color:#e2e8f0;">
+                <h4 style="color:#475569; margin-bottom:12px;">Report Details</h4>
+                <label>Creator ID</label>
+                <input id="doc-creatorId" placeholder="Creator user ID">
+                <label>Availability</label>
+                <select id="doc-availability">
+                    <option value="1">Public</option>
+                    <option value="0">Private</option>
+                </select>
+            </div>
+
+            <div id="notice-fields" style="display:none;">
+                <hr style="margin:16px 0; border-color:#e2e8f0;">
+                <h4 style="color:#475569; margin-bottom:12px;">Notice Details</h4>
+                <label>Sender ID</label>
+                <input id="doc-notice-sender" placeholder="Sender user ID">
+                <label>Subject</label>
+                <input id="doc-subject" placeholder="Notice subject">
+            </div>
+
+            <div id="discussion-fields" style="display:none;">
+                <hr style="margin:16px 0; border-color:#e2e8f0;">
+                <h4 style="color:#475569; margin-bottom:12px;">Discussion Details</h4>
+                <label>Host ID</label>
+                <input id="doc-hostId" placeholder="Host user ID">
+                <label>Agenda</label>
+                <input id="doc-agenda" placeholder="Discussion agenda">
+                <label>Is Discussed?</label>
+                <select id="doc-isDiscussed">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+
+            <div id="request-fields" style="display:none;">
+                <hr style="margin:16px 0; border-color:#e2e8f0;">
+                <h4 style="color:#475569; margin-bottom:12px;">Request Details</h4>
+                <label>Sender ID</label>
+                <input id="doc-request-sender" placeholder="Sender user ID">
+                <label>Receiver ID</label>
+                <input id="doc-receiver" placeholder="Receiver user ID">
+                <label>Status</label>
+                <select id="doc-status">
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+
+            <div style="margin-top:24px; display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="this.closest('.modal-overlay').remove()" 
+                        style="background:#64748b;">Cancel</button>
+                <button onclick="submitDocument(this)">Add Document</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function toggleTypeFields() {
+    // hide all type sections first
+    ['report-fields', 'notice-fields', 'discussion-fields', 'request-fields']
+        .forEach(id => document.getElementById(id).style.display = 'none');
+
+    const type = document.getElementById('doc-type').value;
+    if (type) {
+        document.getElementById(`${type}-fields`).style.display = 'block';
+    }
+}
+
+function submitDocument(btn) {
+    const modal = btn.closest('.modal-overlay');
+    const docType = document.getElementById('doc-type').value;
+
+    if (!docType) { alert('Please select a document type.'); return; }
+
+    // core fields every document has
+    const body = {
+        refNo:      document.getElementById('doc-refNo').value,
+        title:      document.getElementById('doc-title').value,
+        docType:    docType,
+        deptId:     document.getElementById('doc-deptId').value,
+        filePath:   document.getElementById('doc-filePath').value,
+        isExternal: document.getElementById('doc-isExternal').value,
+    };
+
+    // type-specific fields
+    if (docType === 'report') {
+        body.creatorId    = document.getElementById('doc-creatorId').value;
+        body.availability = document.getElementById('doc-availability').value;
+    } else if (docType === 'notice') {
+        body.sender  = document.getElementById('doc-notice-sender').value;
+        body.subject = document.getElementById('doc-subject').value;
+    } else if (docType === 'discussion') {
+        body.hostId      = document.getElementById('doc-hostId').value;
+        body.agenda      = document.getElementById('doc-agenda').value;
+        body.isDiscussed = document.getElementById('doc-isDiscussed').value;
+    } else if (docType === 'request') {
+        body.sender   = document.getElementById('doc-request-sender').value;
+        body.receiver = document.getElementById('doc-receiver').value;
+        body.status   = document.getElementById('doc-status').value;
+    }
+
+    fetch('http://127.0.0.1:5000/Admin/add_document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.message) {
+            alert('Document added successfully');
+            modal.remove();
+            loadDocuments();
+        } else {
+            alert(data.error || 'Failed to add document');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+    function loadDocuments() {
+    fetch('http://127.0.0.1:5000/Admin/manage_files', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('docsTableBody');
+        tbody.innerHTML = '';
+
+    if (data.length === 0) {
+    tbody.innerHTML = `
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>
+                <button onclick="addDocument()">+ Add Document</button>
+            </td>
+        </tr>
+    `;
+    return;
+}
+
+        data.forEach(doc => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${doc.refNo}</td>
+                <td>${doc.title}</td>
+                <td>${doc.docType}</td>
+                <td>${doc.department ?? 'N/A'}</td>
+                <td>${doc.dateCreated}</td>
+                <td>${doc.status ?? 'N/A'}</td>
+                <td>
+                    <button onclick="viewDoc('${doc.docId}')">View</button>
+                    <button onclick="deleteDoc('${doc.docId}', this)">Delete</button>
+                    
+                    
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    })
+    .catch(error => console.error('Error fetching documents:', error));
+}
+function viewDoc(docId) {
+    fetch('http://127.0.0.1:5000/Admin/view_document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: docId })
+    })
+    .then(r => r.json())
+    .then(doc => {
+        if (doc.error) { alert(doc.error); return; }
+
+        // build type-specific rows
+        let detailRows = '';
+        if (doc.details) {
+            detailRows = Object.entries(doc.details).map(([key, val]) => `
+                <tr>
+                    <td style="font-weight:600; color:#475569; width:140px;">${key}</td>
+                    <td>${val ?? 'N/A'}</td>
+                </tr>
+            `).join('');
+        }
+
+        const modal = document.createElement('div');
+        modal.classList.add('modal-overlay');
+        modal.style.cssText = `
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        `;
+        modal.innerHTML = `
+            <div style="background:white; padding:32px; border-radius:12px; width:480px;
+                        box-shadow:0 8px 32px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
+                <h3 style="margin-bottom:20px; color:#1e293b;">${doc.title}</h3>
+
+                <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+                    <tr>
+                        <td style="font-weight:600; color:#475569; width:140px; padding:8px 0;">Doc ID</td>
+                        <td>${doc.docId}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">Type</td>
+                        <td>${doc.docType}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">Ref No</td>
+                        <td>${doc.refNo ?? 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">Department</td>
+                        <td>${doc.department}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">Date Created</td>
+                        <td>${doc.dateCreated}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">File Path</td>
+                        <td>${doc.filePath ?? 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600; color:#475569; padding:8px 0;">External</td>
+                        <td>${doc.isExternal ? 'Yes' : 'No'}</td>
+                    </tr>
+                </table>
+
+                <hr style="border-color:#e2e8f0; margin-bottom:16px;">
+                <h4 style="color:#475569; margin-bottom:12px;">
+                    ${doc.docType.charAt(0).toUpperCase() + doc.docType.slice(1)} Details
+                </h4>
+                <table style="width:100%; border-collapse:collapse;">
+                    ${detailRows}
+                </table>
+
+                <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+                    <button onclick="this.closest('.modal-overlay').remove()"
+                            style="background:#64748b;">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    })
+    .catch(error => console.error('Error:', error));
+}
+function changeStatus(docId, docType, currentStatus) {
+    // notices have no status to change
+    if (docType === 'notice') {
+        alert('Notices do not have a changeable status.');
+        return;
+    }
+
+    // build status options based on doc type
+    let options = '';
+    if (docType === 'request') {
+        options = `
+            <option value="received"  ${currentStatus==='received'  ? 'selected':''}>Received</option>
+            <option value="pending"   ${currentStatus==='pending'   ? 'selected':''}>Pending</option>
+            <option value="rejected"  ${currentStatus==='rejected'  ? 'selected':''}>Rejected</option>
+        `;
+    } else if (docType === 'report') {
+        options = `
+            <option value="Public"  ${currentStatus==='Public'  ? 'selected':''}>Public</option>
+            <option value="Private" ${currentStatus==='Private' ? 'selected':''}>Private</option>
+        `;
+    } else if (docType === 'discussion') {
+        options = `
+            <option value="Discussed" ${currentStatus==='Discussed' ? 'selected':''}>Discussed</option>
+            <option value="Pending"   ${currentStatus==='Pending'   ? 'selected':''}>Pending</option>
+        `;
+    }
+
+    const modal = document.createElement('div');
+    modal.classList.add('modal-overlay');
+    modal.style.cssText = `
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 1000;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; padding:32px; border-radius:12px; width:380px;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="margin-bottom:20px; color:#1e293b;">Change Status</h3>
+            <p style="color:#64748b; margin-bottom:16px;">
+                Document ID: <strong>${docId}</strong> &nbsp;|&nbsp; Type: <strong>${docType}</strong>
+            </p>
+            <label>New Status</label>
+            <select id="new-status">
+                ${options}
+            </select>
+            <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="this.closest('.modal-overlay').remove()"
+                        style="background:#64748b;">Cancel</button>
+                <button onclick="saveStatus(${docId}, this)">Save</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function saveStatus(docId, btn) {
+    const modal = btn.closest('.modal-overlay');
+    const newStatus = document.getElementById('new-status').value;
+
+    fetch('http://127.0.0.1:5000/Admin/change_status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: docId, status: newStatus })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.message) {
+            alert('Status updated successfully');
+            modal.remove();
+            loadDocuments();
+        } else {
+            alert(data.error || 'Failed to update status');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteDoc(docId, btn) {
+    if (!confirm('Delete this document?')) return;
+
+    fetch('http://127.0.0.1:5000/Admin/delete_document', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: docId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.message) btn.closest('tr').remove();
+        else alert(data.error || 'Failed to delete document');
+    })
+    .catch(error => console.error('Error:', error));
+}
+    function deleteUser(email, btn) {
+        if (!confirm('Are you sure you want to delete this user?')) return;
+        fetch('http://127.0.0.1:5000/Admin/delete_user', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.message) btn.closest('tr').remove();
+            else alert(data.error || 'Failed to delete user');
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function editUser(email, firstName, lastName, roles) {
+        const modal = document.createElement('div');
+        modal.classList.add('modal-overlay');
+        modal.style.cssText = `
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        `;
+        modal.innerHTML = `
+            <div style="background:white; padding:32px; border-radius:12px; width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                <h3 style="margin-bottom:20px; color:#1e293b;">Edit User</h3>
+                <label>First Name</label>
+                <input id="edit-firstName" value="${firstName}">
+                <label>Last Name</label>
+                <input id="edit-lastName" value="${lastName}">
+                <label>Role</label>
+                <select id="edit-role">
+                    <option value="Admin"           ${roles==='Admin'           ? 'selected':''}>Admin</option>
+                    <option value="Department Head" ${roles==='Department Head' ? 'selected':''}>Department Head</option>
+                    <option value="Officer"         ${roles==='Officer'         ? 'selected':''}>Officer</option>
+                    <option value="Registry"        ${roles==='Registry'        ? 'selected':''}>Registry</option>
+                </select>
+                <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+                    <button onclick="this.closest('.modal-overlay').remove()" style="background:#64748b;">Cancel</button>
+                    <button onclick="saveUser('${email}', this)">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function saveUser(email, btn) {
+        const modal = btn.closest('.modal-overlay');
+        const body = {
+            email:     email,
+            firstName: document.getElementById('edit-firstName').value,
+            lastName:  document.getElementById('edit-lastName').value,
+            roles:     document.getElementById('edit-role').value
+        };
+        fetch('http://127.0.0.1:5000/Admin/update_user', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(r => r.json())
+        .then(data => {
+            console.log('Update response:', data);
+            if (data.message) {
+                alert('User updated successfully');
+                modal.remove();
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to update user');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        fetch('http://127.0.0.1:5000/Admin/get_stats', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('totalDocs').textContent        = data.totalDocs;
+            document.getElementById('totalUsers').textContent       = data.totalUsers;
+            document.getElementById('totalDepartments').textContent = data.totalDepartments;
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+
+        fetch('http://127.0.0.1:5000/Admin/manage_users', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            data.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.firstName}</td>
+                    <td>${user.lastName}</td>
+                    <td>${user.email}</td>
+                    <td>${user.roles}</td>
+                    <td>
+                        <button onclick="editUser('${user.email}', '${user.firstName}', '${user.lastName}', '${user.roles}')">Edit</button>
+                        <button onclick="deleteUser('${user.email}', this)">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching users:', error));
+        loadDocuments();
+    });
+</script>
+</html>

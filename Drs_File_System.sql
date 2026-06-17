@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: drs_file_system
+-- Host: localhost    Database: drs_file_system
 -- ------------------------------------------------------
 -- Server version	8.0.40
 
@@ -35,6 +35,7 @@ CREATE TABLE `department` (
 
 LOCK TABLES `department` WRITE;
 /*!40000 ALTER TABLE `department` DISABLE KEYS */;
+INSERT INTO `department` VALUES ('D001','ICT'),('D002','ICT');
 /*!40000 ALTER TABLE `department` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -52,9 +53,9 @@ CREATE TABLE `discussions` (
   `agenda` varchar(255) DEFAULT NULL,
   `isDiscussed` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`discussions`),
-  KEY `docId` (`docId`),
   KEY `fk_discussions_users` (`hostId`),
-  CONSTRAINT `discussions_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE,
+  KEY `discussions_ibfk_1` (`docId`),
+  CONSTRAINT `discussions_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`),
   CONSTRAINT `fk_discussions_users` FOREIGN KEY (`hostId`) REFERENCES `users` (`UserId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -69,6 +70,36 @@ LOCK TABLES `discussions` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `document`
+--
+
+DROP TABLE IF EXISTS `document`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `document` (
+  `docType` varchar(20) NOT NULL,
+  `docId` varchar(20) NOT NULL,
+  `refNo` varchar(20) DEFAULT NULL,
+  `dateCreated` varchar(20) DEFAULT NULL,
+  `IsExternal` tinyint(1) DEFAULT NULL,
+  `title` varchar(20) DEFAULT NULL,
+  `filepath` varchar(255) DEFAULT NULL,
+  `deptId` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`docId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `document`
+--
+
+LOCK TABLES `document` WRITE;
+/*!40000 ALTER TABLE `document` DISABLE KEYS */;
+INSERT INTO `document` VALUES ('Notice','1',NULL,NULL,1,'Attaches',NULL,'D001');
+/*!40000 ALTER TABLE `document` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `documents`
 --
 
@@ -76,7 +107,7 @@ DROP TABLE IF EXISTS `documents`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `documents` (
-  `docId` int NOT NULL,
+  `docId` int NOT NULL AUTO_INCREMENT,
   `docType` varchar(20) DEFAULT NULL,
   `refNo` varchar(20) DEFAULT NULL,
   `dateCreated` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -112,10 +143,10 @@ CREATE TABLE `notices` (
   `sender` int DEFAULT NULL,
   `subject` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`noticeId`),
-  KEY `docId` (`docId`),
   KEY `fk_notices_users` (`sender`),
+  KEY `notices_ibfk_1` (`docId`),
   CONSTRAINT `fk_notices_users` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`),
-  CONSTRAINT `notices_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
+  CONSTRAINT `notices_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -141,10 +172,10 @@ CREATE TABLE `reports` (
   `creatorId` int DEFAULT NULL,
   `availability` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`report`),
-  KEY `docId` (`docId`),
   KEY `fk_reports_users` (`creatorId`),
+  KEY `reports_ibfk_1` (`docId`),
   CONSTRAINT `fk_reports_users` FOREIGN KEY (`creatorId`) REFERENCES `users` (`UserId`),
-  CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
+  CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171,12 +202,12 @@ CREATE TABLE `requests` (
   `receiver` int DEFAULT NULL,
   `status` enum('received','pending','rejected') DEFAULT NULL,
   PRIMARY KEY (`requestId`),
-  KEY `docId` (`docId`),
   KEY `fk_requests_users_1` (`sender`),
   KEY `fk_requests_users_2` (`receiver`),
+  KEY `requests_ibfk_1` (`docId`),
   CONSTRAINT `fk_requests_users_1` FOREIGN KEY (`sender`) REFERENCES `users` (`UserId`),
   CONSTRAINT `fk_requests_users_2` FOREIGN KEY (`receiver`) REFERENCES `users` (`UserId`),
-  CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`) ON DELETE CASCADE
+  CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`docId`) REFERENCES `documents` (`docId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -207,7 +238,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`UserId`),
   KEY `deptId` (`deptId`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`deptId`) REFERENCES `department` (`deptId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -216,6 +247,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (2,'wahu','Muchemi','Admin','wahu@gmail.om','12345th','D001'),(4,'John','Doe','Admin','john@gmail.com','12345thy',NULL),(6,'Wahu','Muchemi','Admin','lydiamuchemi260@gmail.com','1234567',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -228,4 +260,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-09 12:59:45
+-- Dump completed on 2026-06-16 10:22:42

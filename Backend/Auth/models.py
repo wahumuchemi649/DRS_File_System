@@ -13,6 +13,12 @@ class user(Base):
     lastName = Column(String(30))
     deptId = Column(String(20))
 
+    # Tell SQLAlchemy to use the 'roles' column for inheritance mapping
+    __mapper_args__ = {
+        "polymorphic_on": roles,
+        "polymorphic_identity": "user" # Default identity
+    }
+
     
     def AdminUser(self):
         return self.roles == "Admin"
