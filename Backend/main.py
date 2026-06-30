@@ -6,12 +6,13 @@ from flask import Flask, jsonify
 from Admin.routes import Admin_bp
 from Auth.routes import Auth_bp
 from Admin.models import Admin
+from Registry.registry_routes import registry_bp
 
 
 
 app = Flask(__name__)
 CORS(app, 
-     resources={r"/*": {"origins": "http://127.0.0.1:5500"}},
+     resources={r"/*": {"origins": ["http://127.0.0.1:5500", "http://localhost:5500"]}},
      supports_credentials=True,
      allow_headers=["Content-Type"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -24,12 +25,13 @@ def handle_preflight():
     from flask import request, Response
     if request.method == "OPTIONS":
         res = Response()
-        res.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:5500'
+        res.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin','*')
         res.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return res   
 app.register_blueprint(Admin_bp, url_prefix="/Admin")
 app.register_blueprint(Auth_bp, url_prefix="/Auth")
+app.register_blueprint(registry_bp, url_prefix="/Registry")
 def database_init():
     print("Initializing the database...")
     

@@ -14,9 +14,10 @@ def register_document(document:Document):
       dateCreated=document.dateCreated,
       IsExternal=document.IsExternal,
       title=document.title,
-      filePath=document.filePath,
+      filepath=document.filepath,
       deptId=document.deptId,
       status="Registered"
+      
     )
 
     db.add(new_document)

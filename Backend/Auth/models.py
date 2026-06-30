@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Enum
 from Config import Base  
-class user(Base):
+class User(Base):
     
     __tablename__ = "users"
 
@@ -12,12 +12,6 @@ class user(Base):
     firstName = Column(String(30))
     lastName = Column(String(30))
     deptId = Column(String(20))
-
-    # Tell SQLAlchemy to use the 'roles' column for inheritance mapping
-    __mapper_args__ = {
-        "polymorphic_on": roles,
-        "polymorphic_identity": "user" # Default identity
-    }
 
     
     def AdminUser(self):

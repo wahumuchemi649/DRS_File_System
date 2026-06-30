@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from Config import Base
 
@@ -13,6 +13,7 @@ class Documents(Base):
     title       = Column(String(20))
     filepath    = Column(String(255))
     deptId      = Column(String(20),ForeignKey('department.deptId'))
+    status = Column(Enum('Received', 'Registered', 'Routed', 'Under Review', 'Approved'), default='Received')
     department = relationship('Department',  back_populates='documents')
     report     = relationship('Report',      back_populates='document', uselist=False)
     notice     = relationship('Notice',      back_populates='document', uselist=False)
