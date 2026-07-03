@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DRS_File_System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <header>
         <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
@@ -23,30 +21,13 @@
             <form id="signupForm">
                 <label for="firstName">First Name:</label>
                 <input type="text" id="firstName" name="firstName" required>
-                <label for="lastName">Last Name:</label>
-                <input type="text" id="lastName" name="lastName" required>
 
-
-<body>
-    <header>
-        <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
-        <div>
-            <p>Republic of Kenya</p>
-            <h1>DRS File System</h1>
-            <p>Document Registry System</p>
-        </div>
-    </header>
-    <main>
-        <div>
-            <h2>Sign Up</h2>
-            <form id="signupForm">
-                <label for="firstName">First Name:</label>
-                <input type="text" id="firstName" name="firstName" required>
                 <label for="lastName">Last Name:</label>
                 <input type="text" id="lastName" name="lastName" required>
 
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required>
+
                 <label for="role">Role:</label>
                 <select id="role" name="role" required>
                     <option value="">Select Role</option>
@@ -55,166 +36,125 @@
                     <option value="Officer">Officer</option>
                     <option value="Registry">Registry</option>
                 </select>
+
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
+
                 <label for="confirm_password">Confirm Password:</label>
                 <input type="password" id="confirm_password" name="confirm_password" required>
+
                 <button type="submit">Sign Up</button>
-
-
-    </div>
-    <div >
-        <h2>Login</h2>
-        <form id="loginForm">
-            <label for="loginEmail">Email:</label>
-            <input type="email" id="loginEmail" name="email" required>
-            <label for="loginPassword">Password:</label>
-            <input type="password" id="loginPassword" name="password" required>
-            <button type="submit">Login</button>
-        </form>
-    </form>
-</form>
-
+            </form>
         </div>
+
         <div>
             <h2>Login</h2>
             <form id="loginForm">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" name="email" required>
+
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="password" required>
+
                 <button type="submit">Login</button>
             </form>
-
         </div>
     </main>
+
+    <script>
+        const API = 'http://127.0.0.1:5000';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const signupForm = document.querySelector('#signupForm');
+            const loginForm = document.querySelector('#loginForm');
+
+            signupForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+
+                if (password !== confirmPassword) {
+                    alert("Passwords do not match!");
+                    return;
+                }
+                if (password.length < 6) {
+                    alert("Password must be at least 6 characters long!");
+                    return;
+                }
+                if (!signupForm.role.value || signupForm.email.value.trim() === "") {
+                    alert("Please fill in all required fields!");
+                    return;
+                }
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(signupForm.email.value)) {
+                    alert("Please enter a valid email address!");
+                    return;
+                }
+
+                const body = {
+                    firstName: signupForm.firstName.value,
+                    lastName: signupForm.lastName.value,
+                    email: signupForm.email.value,
+                    password: signupForm.password.value,
+                    role: signupForm.role.value,
+                    deptId: null
+                };
+
+                fetch(`${API}/Auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Server response:', data);
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        alert(data.message);
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            loginForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const body = {
+                    email: loginForm.loginEmail.value,
+                    password: loginForm.loginPassword.value
+                };
+
+                fetch(`${API}/Auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Server response:', data);
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        sessionStorage.setItem('currentUser', JSON.stringify(data));
+
+                        if (data.roles === 'Registry') {
+                            window.location.href = 'registry.html';
+                        } else if (data.roles === 'Admin') {
+                            window.location.href = 'Admin.html';
+                        } else if (data.roles === 'Department Head') {
+                            window.location.href = 'Department_head.html';
+                        } else if (data.roles === 'Officer') {
+                            window.location.href = 'Officers.html';
+                        } else {
+                            alert('Unknown role: ' + data.roles);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        });
+    </script>
 </body>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const signupForm = document.querySelector('#signupForm');
-        const loginForm = document.querySelector('#loginForm');
-
-        signupForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-
-            if (password !== confirmPassword) {
-                alert("Passwords do not match!"); return;
-            }
-            if (password.length < 6) {
-                alert("Password must be at least 6 characters long!"); return;
-            }
-            if (!signupForm.role.value || signupForm.email.value.trim() === "") {
-                alert("Please fill in all required fields!"); return;
-            }
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(signupForm.email.value)) {
-                alert("Please enter a valid email address!"); return;
-            }
-
-            
-            const body = {
-                firstName: signupForm.firstName.value,
-                lastName: signupForm.lastName.value,
-                email: signupForm.email.value,
-                password: signupForm.password.value,
-                role: signupForm.role.value,
-                deptId: null
-            };
-
-            fetch('http://127.0.0.1:5000/Auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },  
-                body: JSON.stringify(body)                         
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Server response:', data);
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    alert(data.message);
-                })
-                .catch(error => console.error('Error:', error));
-        });
-
-        loginForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const body = {
-                email: loginForm.email.value,
-                password: loginForm.password.value
-            };
-
-            fetch('http://127.0.0.1:5000/Auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Server response:', data);
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    sessionStorage.setItem('currentUser', JSON.stringify(data));
-                    if (data.roles === 'Registry') {
-                        window.location.href = 'registry.html';
-                    } else if (data.roles === 'Admin') {
-                        window.location.href = 'Admin.html';
-                    } else if (data.roles === 'Department Head') {
-                        window.location.href = 'Department_head.html';
-                    } else if (data.roles === 'Officer') {
-                        window.location.href = 'Officers.html';
-                    } else {
-                        alert('Unknown role: ' + data.roles);
-                    }
-
-                })
-                .catch(error => console.error('Error:', error));
-        });
-    });
-async function handleLogin() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-
-      if (!email || !password) {
-        showToast('Please enter email and password', 'error');
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}/Auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          if (data.roles !== 'Registry') {
-            showToast('Access denied. Registry users only.', 'error');
-            return;
-          }
-          currentUser = data;
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('dashboard').style.display = 'block';
-          document.getElementById('welcomeText').textContent =
-            `Welcome, ${data.email} (${data.roles})`;
-          loadDocs('Received', document.querySelector('.tab'));
-        } else {
-          showToast(data.error || 'Login failed', 'error');
-        }
-      } catch (err) {
-        showToast('Cannot connect to server. Is Flask running?', 'error');
-      }
-    }
-
-</script>
-
 </html>
