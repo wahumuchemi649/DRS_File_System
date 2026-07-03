@@ -17,31 +17,6 @@
       background: #f0f2f5;
     }
 
-    .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .login-box {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      width: 400px;
-    }
-
-    .login-box h2 {
-      margin-bottom: 8px;
-      color: #1a73e8;
-    }
-
-    .login-box p {
-      color: #666;
-      margin-bottom: 24px;
-    }
-
     label {
       font-size: 13px;
       color: #444;
@@ -293,19 +268,6 @@
 
 <body>
 
-  <!-- LOGIN -->
-  <div class="login-container" id="loginPage">
-    <div class="login-box">
-      <h2>DRS File System</h2>
-      <p>Registry Portal — Please sign in</p>
-      <label>Email Address</label>
-      <input type="email" id="loginEmail" placeholder="you@example.com">
-      <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="Enter your password">
-      <button class="btn" onclick="handleLogin()">Sign In</button>
-    </div>
-  </div>
-
   <!-- DASHBOARD -->
   <div class="dashboard" id="dashboard">
     <div class="header">
@@ -317,13 +279,11 @@
     </div>
 
     <div class="content">
-      <!-- Quick Actions -->
       <div class="actions">
         <button class="btn btn-small" onclick="openModal('registerModal')">+ Register Document</button>
         <button class="btn btn-green btn-small" onclick="openModal('routeModal')">→ Route Document</button>
       </div>
 
-      <!-- Status Tabs -->
       <div class="tabs">
         <div class="tab active" onclick="loadDocs('Received', this)">Received</div>
         <div class="tab" onclick="loadDocs('Registered', this)">Registered</div>
@@ -332,7 +292,6 @@
         <div class="tab" onclick="loadDocs('Approved', this)">Approved</div>
       </div>
 
-      <!-- Table -->
       <table>
         <thead>
           <tr>
@@ -354,28 +313,15 @@
     </div>
   </div>
 
-  <!-- REGISTER MODAL -->
+  <!-- REGISTER MODAL — now takes a Doc ID -->
   <div class="modal" id="registerModal">
     <div class="modal-box">
-      <h3>Register New Document</h3>
-      <label>Title</label>
-      <input type="text" id="regTitle" placeholder="Document title">
-      <label>Document Type</label>
-      <select id="regType">
-        <option value="Report">Report</option>
-        <option value="Notice">Notice</option>
-        <option value="Discussion">Discussion</option>
-        <option value="Request">Request</option>
-      </select>
-      <label>Department ID (optional)</label>
-      <input type="text" id="regDeptId" placeholder="e.g. HR01">
-      <label>File Path</label>
-      <input type="text" id="regFilePath" placeholder="/files/document.pdf">
-      <label>External Document?</label>
-      <select id="regExternal">
-        <option value="false">No (Internal)</option>
-        <option value="true">Yes (External)</option>
-      </select>
+      <h3>Register Received Document</h3>
+      <label>Document ID</label>
+      <input type="number" id="regDocId" placeholder="Enter ID of received document">
+      <p style="font-size:12px; color:#666; margin-top:-10px; margin-bottom:16px;">
+        The document must already be in "Received" status
+      </p>
       <div class="modal-actions">
         <button class="btn btn-small" onclick="handleRegister()">Register</button>
         <button class="btn btn-small btn-red" onclick="closeModal('registerModal')">Cancel</button>
@@ -398,12 +344,23 @@
     </div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
   <script>
     const API = 'http://127.0.0.1:5000';
     let currentUser = null;
+
+    // Check session on page load
+    const savedUser = sessionStorage.getItem('currentUser');
+    if (!savedUser) {
+      window.location.href = 'index.html';
+    } else {
+      currentUser = JSON.parse(savedUser);
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('welcomeText').textContent =
+        `Welcome, ${currentUser.email} (${currentUser.roles})`;
+      loadDocs('Received', document.querySelector('.tab'));
+    }
 
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
@@ -427,43 +384,6 @@
       return map[status] || '';
     }
 
-    async function handleLogin() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-
-      if (!email || !password) {
-        showToast('Please enter email and password', 'error');
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}/Auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          if (data.roles !== 'Registry') {
-            showToast('Access denied. Registry users only.', 'error');
-            return;
-          }
-          currentUser = data;
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('dashboard').style.display = 'block';
-          document.getElementById('welcomeText').textContent =
-            `Welcome, ${data.email} (${data.roles})`;
-          loadDocs('Received', document.querySelector('.tab'));
-        } else {
-          showToast(data.error || 'Login failed', 'error');
-        }
-      } catch (err) {
-        showToast('Cannot connect to server. Is Flask running?', 'error');
-      }
-    }
-
     async function loadDocs(status, tabEl) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       tabEl.classList.add('active');
@@ -477,16 +397,16 @@
 
         if (data.documents && data.documents.length > 0) {
           tbody.innerHTML = data.documents.map(doc => `
-                    <tr>
-                        <td>${doc.docId}</td>
-                        <td>${doc.refNo || '—'}</td>
-                        <td>${doc.title || '—'}</td>
-                        <td>${doc.docType || '—'}</td>
-                        <td>${doc.dateCreated ? doc.dateCreated.split('.')[0] : '—'}</td>
-                        <td>${doc.deptId || '—'}</td>
-                        <td><span class="badge ${getBadgeClass(doc.status)}">${doc.status}</span></td>
-                    </tr>
-                `).join('');
+            <tr>
+              <td>${doc.docId}</td>
+              <td>${doc.refNo || '—'}</td>
+              <td>${doc.title || '—'}</td>
+              <td>${doc.docType || '—'}</td>
+              <td>${doc.dateCreated ? doc.dateCreated.split('.')[0] : '—'}</td>
+              <td>${doc.deptId || '—'}</td>
+              <td><span class="badge ${getBadgeClass(doc.status)}">${doc.status}</span></td>
+            </tr>
+          `).join('');
         } else {
           tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No documents with status: ${status}</td></tr>`;
         }
@@ -496,19 +416,15 @@
     }
 
     async function handleRegister() {
-      const title = document.getElementById('regTitle').value.trim();
-      const docType = document.getElementById('regType').value;
-      const deptId = document.getElementById('regDeptId').value.trim() || null;
-      const filePath = document.getElementById('regFilePath').value.trim();
-      const isExternal = document.getElementById('regExternal').value === 'true';
+      const docId = parseInt(document.getElementById('regDocId').value);
 
-      if (!title) { showToast('Title is required', 'error'); return; }
+      if (!docId) { showToast('Please enter a Document ID', 'error'); return; }
 
       try {
-        const res = await fetch(`${API}/Registry/documents/register`, {
-          method: 'POST',
+        const res = await fetch(`${API}/Registry/documents/register-by-id`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, docType, deptId, filePath, isExternal })
+          body: JSON.stringify({ docId })
         });
 
         const data = await res.json();
@@ -516,9 +432,7 @@
 
         if (res.ok) {
           showToast(`Document registered! Ref: ${data.ref_no}`);
-          document.getElementById('regTitle').value = '';
-          document.getElementById('regFilePath').value = '';
-          document.getElementById('regDeptId').value = '';
+          document.getElementById('regDocId').value = '';
           loadDocs('Registered', document.querySelectorAll('.tab')[1]);
         } else {
           showToast(data.error || 'Registration failed', 'error');
@@ -559,18 +473,9 @@
 
     function handleLogout() {
       currentUser = null;
-      document.getElementById('dashboard').style.display = 'none';
-      document.getElementById('loginPage').style.display = 'flex';
-      document.getElementById('loginEmail').value = '';
-      document.getElementById('loginPassword').value = '';
-      showToast('Logged out successfully');
+      sessionStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
     }
-
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && document.getElementById('loginPage').style.display !== 'none') {
-        handleLogin();
-      }
-    });
   </script>
 </body>
 

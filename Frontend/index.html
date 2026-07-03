@@ -1,83 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">    
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DRS_File_System</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<header>
-    <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
-    <div>
-        <p>Republic of Kenya</p>
-        <h1>DRS File System</h1>
-        <p>Document Registry System</p>
-    </div>    
-</header>
-<main>
-    <div>
-        <h2>Sign Up</h2>
-        <form id="signupForm">
-            <label for="firstName">First Name:</label>
-            <input type="text" id="firstName" name="firstName" required>
-            <label for="lastName">Last Name:</label>
-            <input type="text" id="lastName" name="lastName" required>
+    <header>
+        <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
+        <div>
+            <p>Republic of Kenya</p>
+            <h1>DRS File System</h1>
+            <p>Document Registry System</p>
+        </div>
+    </header>
+    <main>
+        <div>
+            <h2>Sign Up</h2>
+            <form id="signupForm">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" name="firstName" required>
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" name="lastName" required>
 
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-            <label for="role">Role:</label>
-            <select id="role" name="role" required>
-                <option value="">Select Role</option>
-                <option value="Admin">Admin</option>
-                <option value="Department Head">Department Head</option>
-                <option value="Officer">Officer</option>
-                <option value="Registry">Registry</option>
-            </select>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-            <label for="confirm_password">Confirm Password:</label>
-            <input type="password" id="confirm_password" name="confirm_password" required>
-            <button type="submit">Sign Up</button>
-            
-        </form>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <label for="role">Role:</label>
+                <select id="role" name="role" required>
+                    <option value="">Select Role</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Department Head">Department Head</option>
+                    <option value="Officer">Officer</option>
+                    <option value="Registry">Registry</option>
+                </select>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+                <button type="submit">Sign Up</button>
 
-    </div>
-    <div >
-        <h2>Login</h2>
-        <form id="loginForm">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-            <button type="submit">Login</button>
-        </form>
+            </form>
 
-    </div>
-</main>
+        </div>
+        <div>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                <button type="submit">Login</button>
+            </form>
+
+        </div>
+    </main>
 </body>
 <script>
-    document.addEventListener('DOMContentLoaded', function(){
+    document.addEventListener('DOMContentLoaded', function () {
         const signupForm = document.querySelector('#signupForm');
         const loginForm = document.querySelector('#loginForm');
 
-        signupForm.addEventListener('submit', function(event){
+        signupForm.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
 
-            if(password !== confirmPassword){
+            if (password !== confirmPassword) {
                 alert("Passwords do not match!"); return;
             }
-            if(password.length < 6){
+            if (password.length < 6) {
                 alert("Password must be at least 6 characters long!"); return;
             }
-            if(!signupForm.role.value || signupForm.email.value.trim() === ""){
+            if (!signupForm.role.value || signupForm.email.value.trim() === "") {
                 alert("Please fill in all required fields!"); return;
             }
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!emailPattern.test(signupForm.email.value)){
+            if (!emailPattern.test(signupForm.email.value)) {
                 alert("Please enter a valid email address!"); return;
             }
 
@@ -96,16 +98,19 @@
                 headers: { 'Content-Type': 'application/json' },  // ✅ required
                 body: JSON.stringify(body)                          // ✅ stringify
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Server response:', data);
-                if(data.message) alert(data.message);
-                if(data.error) alert(data.error);
-            })
-            .catch(error => console.error('Error:', error));
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server response:', data);
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    alert(data.message);
+                })
+                .catch(error => console.error('Error:', error));
         });
 
-        loginForm.addEventListener('submit', function(event){
+        loginForm.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const body = {
@@ -118,14 +123,30 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Server response:', data);
-                if(data.message) alert(data.message);
-                if(data.error) alert(data.error);
-            })
-            .catch(error => console.error('Error:', error));
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server response:', data);
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    sessionStorage.setItem('currentUser', JSON.stringify(data));
+                    if (data.roles === 'Registry') {
+                        window.location.href = 'registry.html';
+                    } else if (data.roles === 'Admin') {
+                        window.location.href = 'Admin.html';
+                    } else if (data.roles === 'Department Head') {
+                        window.location.href = 'Department_head.html';
+                    } else if (data.roles === 'Officer') {
+                        window.location.href = 'Officers.html';
+                    } else {
+                        alert('Unknown role: ' + data.roles);
+                    }
+
+                })
+                .catch(error => console.error('Error:', error));
         });
     });
 </script>
+
 </html>
