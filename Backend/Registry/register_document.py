@@ -1,43 +1,38 @@
-from Registry.models import Document
+from Documents.models import Documents as Document
 from Config import SessionLocal
 
-def register_document(document:Document):
-  db = SessionLocal()
-  try:
-    count = db.query(Document).count()
-    ref_no = f"REF-{count + 1:04d}" #generate ref no e.g REF-0001...
+def register_by_id(doc_id: int):
+    db = SessionLocal()
+    try:
+        # Step 1: Find the document by ID
+        document = db.query(Document).filter(Document.docId == doc_id).first()
 
-    #NEW DOCUMENT OBJECT
-    new_document = Document(
-      refNo=ref_no,
-      docType=document.docType,
-      dateCreated=document.dateCreated,
-      IsExternal=document.IsExternal,
-      title=document.title,
-      filepath=document.filepath,
-      deptId=document.deptId,
-      status="Registered"
-      
-    )
+        # Step 2: Check if it exists
+        if not document:
+            return {"error": "Document not found"}
 
-    db.add(new_document)
-    db.commit()
-    db.refresh(new_document)
+        # Step 3: Check if it's in Received status
+        if document.status != "Received":
+            return {"error": f"Document is already '{document.status}'. Can only register Received documents."}
 
-    return {"message": "Document registered successfully", "ref_no": new_document.refNo}
+        # Step 4: Generate a ref number
+        count = db.query(Document).count()
+        ref_no = f"REF-{count + 1:04d}"
 
-  except Exception as e:
-      return {"error": str(e)}
+        # Step 5: Update the document
+        document.refNo = ref_no
+        document.status = "Registered"
 
-if __name__ == "__main__":
-    test_doc = Document(
-        docId=999,
-        docType="Report",
-        IsExternal=False,
-        title="Budget Report",
-        filePath="/files/budget.pdf",
-        deptId=None
-    )
+        # Step 6: Save changes
+        db.commit()
+        db.refresh(document)
 
-    result = register_document(test_doc)
-    print(result)
+        return {
+            "message": "Document registered successfully",
+            "ref_no": document.refNo,
+            "docId": document.docId,
+            "status": document.status
+        }
+
+    except Exception as e:
+        return {"error": str(e)}

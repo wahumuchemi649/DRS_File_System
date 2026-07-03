@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from Registry.register_document import register_document
+from Registry.register_document import register_by_id
 from Registry.route_document import route_document
 from Registry.documents import get_documents_by_status
 from Registry.models import Document
@@ -41,6 +41,18 @@ def route_doc():
     if not data.get('docId') or not data.get('deptId'):
         return jsonify({"error": "docId and deptId are required"}), 400
     result = route_document(data['docId'], data['deptId'])
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result), 200
+
+@registry_bp.route('/documents/register-by-id', methods=['PUT'])
+def register_by_id():
+    data = request.get_json()
+    if not data.get('docId'):
+        return jsonify({"error": "docId is required"}), 400
+    
+    from Registry.register_document import register_by_id
+    result = register_by_id(data['docId'])
     if "error" in result:
         return jsonify(result), 400
     return jsonify(result), 200
