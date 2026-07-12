@@ -20,13 +20,13 @@ def signup(user:User):
             lastName=user.lastName,
             deptId=user.deptId
         )
-
+        
         # Add the new user to the database
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
 
-        return {"message": "User created successfully", "user_id": new_user.UserId}
+        return {"message": "User created successfully", "message": "Please proceed to login"}
     except Exception as e:
         db.rollback()
         return {"error": str(e)}

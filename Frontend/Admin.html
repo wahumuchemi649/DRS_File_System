@@ -103,6 +103,14 @@
         </main>
 </body>
 <script>
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}    
 function searchDocuments() {
     const docType = document.getElementById('filterDocType').value;
 
@@ -110,6 +118,7 @@ function searchDocuments() {
         loadDocuments();  // if no type selected, just load all
         return;
     }
+    
 
     fetch('http://127.0.0.1:5000/Admin/search_documents', {
         method: 'POST',
@@ -133,13 +142,14 @@ function searchDocuments() {
         }
 
        data.forEach(doc => {
+        
     const row = document.createElement('tr');
     row.innerHTML = `
     <td>${doc.refNo}</td>
     <td>${doc.title}</td>
     <td>${doc.docType}</td>
     <td>${doc.department ?? 'N/A'}</td>
-    <td>${doc.dateCreated}</td>
+    <td>${formatDate(doc.dateCreated)}</td>
     <td>${doc.status ?? 'N/A'}</td>
     <td>
         <button onclick="viewDoc('${doc.docId}')">View</button>
@@ -350,7 +360,7 @@ function submitDocument(btn) {
                 <td>${doc.title}</td>
                 <td>${doc.docType}</td>
                 <td>${doc.department ?? 'N/A'}</td>
-                <td>${doc.dateCreated}</td>
+                <td>${formatDate(doc.dateCreated)}</td>
                 <td>${doc.status ?? 'N/A'}</td>
                 <td>
                     <button onclick="viewDoc('${doc.docId}')">View</button>

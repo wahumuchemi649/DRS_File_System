@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department</title>
+    <link rel="stylesheet" href="department.css">    
+</head>
+<body>
+    <header>
+        <div>
+
+        </div>
+        <div>
+            <img src="coat_of_arms.jpg" alt="Coat of Arms" class="coat-of-arms">
+            <p>Republic of Kenya</p>
+            <h1>DRS File System</h1>
+            <p>Document Registry System</p>
+        </div>
+        <div class="leftSide">
+            <button id="logoutButton">Logout</button>
+            <p>Notifications</p>
+        </div>
+    </header>
+    
+        <aside>
+            <h2>Department Panel</h2>
+            <p>Welcome</p>
+            <ul>
+                <li><a href="#Body">Dashboard</a></li>
+                <li><a href="#users">User Management</a></li>
+                <li><a href="#documents">Document Management</a></li>
+                <li><a href="#Settings">Settings</a></li>
+            </ul>
+        </aside>
+        <main>
+                 <div class="cards">
+                    <h2 id="deptName">{}</h2>
+                    <div class="card">
+                      <h4>Total Documents</h4>
+                     <h1 id="totaldocs">{}</h1>
+                     </div>
+
+                <div class="card">
+                      <h4>Total Users</h4>
+                      <h1 id="totalusers">{}</h1>
+                     </div>
+                </div>
+            
+            <div id="users">
+                <h2 id="deptName">All Users in this Department</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- User rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="documents">
+                <h2>Documents</h2>
+                <p>Only documents related to this department are be displayed.</p>
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
+                     <select id="filterDocType">
+                       <option value="">All Types</option>
+                       <option value="report">Report</option>
+                       <option value="notice">Notice</option>
+                       <option value="discussion">Discussion</option>
+                       <option value="request">Request</option>
+                     </select>
+                     <button onclick="searchDocuments()">Search</button>
+                     <button onclick="loadDocuments()" style="background:#64748b;">Clear</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document ID</th>
+                            <th>Document Type</th>
+                            <th>Title</th>
+                            <th>Date Created</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documentTableBody">
+                        <!-- Document rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </body>
+    <script>
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+       const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+       fetch(`http://127.0.0.1:5000/Department/department_members/${currentUser.UserId}`)
+       .then(response => response.json())
+       .then(data => {
+        document.getElementById('deptName').textContent = `Users in ${data[0].deptName} Department`;
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = ''; // Clear existing rows
+     tbody.innerHTML = data.map(user => `
+            <tr>
+                <td>${user.UserId}</td>
+                <td>${user.firstName} ${user.lastName}</td>
+                <td>${user.email}</td>
+                <td><button onclick="deleteUser(${user.UserId})">Delete</button></td>
+                
+            </tr>
+        `).join('');
+
+
+        const totalmembers = data.length;
+        document.getElementById('totalusers').textContent = totalmembers;
+
+       })
+         .catch(error => console.error('Error fetching department members:', error));
+
+         
+
+       fetch(`http://127.0.0.1:5000/Department/department_documents/${currentUser.UserId}`)
+         .then(response => response.json())
+         .then(data => {
+             const tbody = document.getElementById('documentTableBody');
+             tbody.innerHTML = ''; 
+             const totaldocs = data.length;
+             document.getElementById('totaldocs').textContent = totaldocs;
+
+             data.forEach(doc => {
+                 const row = document.createElement('tr');
+                 row.innerHTML = `
+                     <td>${doc.docId}</td>
+                     <td>${doc.docType}</td>
+                     <td>${doc.title}</td>
+                     <td>${formatDate(doc.dateCreated)}</td>
+                     <td>${doc.status}</td>
+                 `;
+                 tbody.appendChild(row);
+             });
+         })
+         .catch(error => console.error('Error fetching documents:', error));
+    </script>
+    </html>

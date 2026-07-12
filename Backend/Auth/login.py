@@ -10,7 +10,7 @@ def login(email: str, password: str):
       return{"error": "Email not found"}
 
     if existing_user.password == password:
-      return{"message": "Successful login", "email": existing_user.email, "roles": existing_user.roles}
+      return{"message": "Successful login", "email": existing_user.email, "roles": existing_user.roles, "UserId": existing_user.UserId}
     else:
       return{"error": "Incorrect Password"}
 

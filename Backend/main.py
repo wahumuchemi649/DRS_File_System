@@ -6,6 +6,7 @@ from flask import Flask, jsonify
 from Admin.routes import Admin_bp
 from Auth.routes import Auth_bp
 from Admin.models import Admin
+from Department.routes import Department_bp
 from Registry.registry_routes import registry_bp
 
 
@@ -30,6 +31,7 @@ def handle_preflight():
         res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return res   
 app.register_blueprint(Admin_bp, url_prefix="/Admin")
+app.register_blueprint(Department_bp, url_prefix="/Department")
 app.register_blueprint(Auth_bp, url_prefix="/Auth")
 app.register_blueprint(registry_bp, url_prefix="/Registry")
 def database_init():
