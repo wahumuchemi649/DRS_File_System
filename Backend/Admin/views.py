@@ -216,12 +216,13 @@ def search_documents():
 
     try:
         docs = db.query(Documents)\
-         .outerjoin(Report,     Report.docId     == Documents.docId)\
-         .outerjoin(Notice,     Notice.docId     == Documents.docId)\
-         .outerjoin(Discussion, Discussion.docId == Documents.docId)\
-         .outerjoin(Request,    Request.docId    == Documents.docId)\
-         .order_by(Documents.dateCreated.desc())\
-         .all()
+    .outerjoin(Report,     Report.docId     == Documents.docId)\
+    .outerjoin(Notice,     Notice.docId     == Documents.docId)\
+    .outerjoin(Discussion, Discussion.docId == Documents.docId)\
+    .outerjoin(Request,    Request.docId    == Documents.docId)\
+    .filter(Documents.docType == doc_type)\
+    .order_by(Documents.dateCreated.desc())\
+    .all()
         if not docs:
             return jsonify([]), 200
 

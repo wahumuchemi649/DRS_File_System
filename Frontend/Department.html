@@ -87,7 +87,7 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody id="documentTableBody">
+                    <tbody id="docsTableBody">
                         <!-- Document rows will be dynamically added here -->
                     </tbody>
                 </table>
@@ -104,6 +104,57 @@
                 year: 'numeric'
             });
         }
+     function searchDocuments() {
+    const docType = document.getElementById('filterDocType').value;
+
+    if (!docType) {
+        loadDocuments();  
+        return;
+    }
+    
+
+    fetch('http://127.0.0.1:5000/Admin/search_documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType: docType })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('docsTableBody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:30px; color:#64748b;">
+                        No ${docType}s found.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+       data.forEach(doc => {
+        
+    const row = document.createElement('tr');
+    row.innerHTML = `
+    <td>${doc.refNo}</td>
+    <td>${doc.title}</td>
+    <td>${doc.docType}</td>
+    <td>${doc.department ?? 'N/A'}</td>
+    <td>${formatDate(doc.dateCreated)}</td>
+    <td>${doc.status ?? 'N/A'}</td>
+    <td>
+        <button onclick="viewDoc('${doc.docId}')">View</button>
+        <button onclick="changeStatus('${doc.docId}', '${doc.docType}', '${doc.status}')">Status</button>
+        <button onclick="deleteDoc('${doc.docId}', this)">Delete</button>
+    </td>
+`;
+    tbody.appendChild(row);
+});
+    })
+    .catch(error => console.error('Error searching documents:', error));
+}    
        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
        fetch(`http://127.0.0.1:5000/Department/department_members/${currentUser.UserId}`)
        .then(response => response.json())
@@ -133,7 +184,7 @@
        fetch(`http://127.0.0.1:5000/Department/department_documents/${currentUser.UserId}`)
          .then(response => response.json())
          .then(data => {
-             const tbody = document.getElementById('documentTableBody');
+             const tbody = document.getElementById('docsTableBody');
              tbody.innerHTML = ''; 
              const totaldocs = data.length;
              document.getElementById('totaldocs').textContent = totaldocs;
