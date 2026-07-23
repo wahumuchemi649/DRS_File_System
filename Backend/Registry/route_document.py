@@ -1,5 +1,6 @@
 from Registry.models import Document
 from Config import SessionLocal
+from Notifications.services import create_notification
 
 def route_document(doc_id: int, dept_id: str):
     db = SessionLocal()
@@ -13,6 +14,13 @@ def route_document(doc_id: int, dept_id: str):
         document.deptId = dept_id
         db.commit()
         db.refresh(document)
+        create_notification(
+    docId=document.docId,
+    deptId=document.deptId,
+    title="New Routed Document",
+    message=f"Document '{document.title}' has been routed to your department.",
+    priority="Normal"
+)
 
         return {
             "message": "Document routed successfully",
